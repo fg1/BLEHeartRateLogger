@@ -318,11 +318,11 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Increase verbose level
-    if args.V:
+    if args.v:
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
 
-    main(args.b, args.o, args.g, args.B)
+    main(args.m, args.o, args.g, args.b)
 
 
