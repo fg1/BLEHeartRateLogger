@@ -25,7 +25,7 @@ import logging
 import sqlite3
 import pexpect
 import argparse
-
+import ConfigParser
 
 logging.basicConfig(format="%(asctime)-15s  %(message)s")
 log = logging.getLogger("BLEHeartRateLogger")
@@ -35,11 +35,32 @@ def parse_args():
     Command line argument parsing
     """
     parser = argparse.ArgumentParser(description="Bluetooth heart rate monitor data logger")
-    parser.add_argument("-b", type=str, help="MAC address of BLE device (default: auto-discovery)")
-    parser.add_argument("-B", action='store_true', help="Check battery level")
-    parser.add_argument("-g", type=str, help="gatttool path (default: system available)", default="gatttool")
-    parser.add_argument("-o", type=str, help="Output filename of the database (default: none)")
-    parser.add_argument("-V", action='store_true', help="Verbose output")
+    parser.add_argument("-m", metavar='MAC', type=str, help="MAC address of BLE device (default: auto-discovery)")
+    parser.add_argument("-b", action='store_true', help="Check battery level")
+    parser.add_argument("-g", metavar='PATH', type=str, help="gatttool path (default: system available)", default="gatttool")
+    parser.add_argument("-o", metavar='FILE', type=str, help="Output filename of the database (default: none)")
+    parser.add_argument("-v", action='store_true', help="Verbose output")
+
+    confpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "BLEHeartRateLogger.conf")
+    if os.path.exists(confpath):
+
+        config = ConfigParser.SafeConfigParser()
+        config.read([confpath])
+        config = dict(config.items("config"))
+
+        # We compare here the configuration given in the config file with the
+        # configuration of the parser.
+        args = vars(parser.parse_args([]))
+        err = False
+        for key in config.iterkeys():
+            if key not in args:
+                log.error("Configuration file error: invalid key '" + key + "'.")
+                err = True
+        if err:
+            sys.exit(1)
+
+        parser.set_defaults(**config)
+
     return parser.parse_args()
 
 
@@ -135,13 +156,19 @@ def get_ble_hr_mac():
         log.info("Trying to find a BLE device")
         hci = pexpect.spawn("hcitool lescan")
         try:
-            hci.expect("([0-9A-F]{2}[:-]){5}([0-9A-F]{2})", timeout=10)
+            hci.expect("([0-9A-F]{2}[:-]){5}([0-9A-F]{2})", timeout=20)
             addr = hci.match.group(0)
             hci.close()
             break
+
         except pexpect.TIMEOUT:
-            time.sleep(60)
+            time.sleep(20)
             continue
+
+        except KeyboardInterrupt:
+            log.info("Received keyboard interrupt. Quitting cleanly.")
+            hci.close()
+            return None
 
     # We wait for the 'hcitool lescan' to finish
     time.sleep(1)
@@ -164,6 +191,9 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False):
     if addr is None:
         # In case no address has been provided, we scan to find any BLE devices
         addr = get_ble_hr_mac()
+        if addr == None:
+            sq.close()
+            return
 
     retry = True
     while retry:
@@ -175,10 +205,19 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False):
             gt.sendline("connect")
 
             try:
-                gt.expect("Connection successful.", timeout=10)
-                gt.expect(r"\[LE\]>", timeout=10)
+                gt.expect("Connection successful.", timeout=30)
+                gt.expect(r"\[LE\]>", timeout=30)
+
             except pexpect.TIMEOUT:
                 continue
+
+            except KeyboardInterrupt:
+                log.info("Received keyboard interrupt. Quitting cleanly.")
+                retry = False
+                break
+            break
+
+        if not retry:
             break
 
         log.info("Connected to " + addr)
@@ -219,6 +258,7 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False):
                 # If the timer expires, it means that we have lost the
                 # connection with the HR monitor
                 log.warn("Connection lost with " + addr + ". Reconnecting.")
+                sq.commit()
                 gt.sendline("quit")
                 try:
                     gt.wait()

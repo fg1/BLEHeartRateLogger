@@ -36,17 +36,17 @@ To quit the tool, simply Ctrl-C.
 
 Command line options:
 ```
-usage: BLEHeartRateLogger.py [-h] [-b B] [-B] [-g G] [-o O] [-V]
+usage: BLEHeartRateLogger.py [-h] [-m MAC] [-b] [-g PATH] [-o FILE] [-v]
 
 Bluetooth heart rate monitor data logger
 
 optional arguments:
   -h, --help  show this help message and exit
-  -b B        MAC address of BLE device (default: auto-discovery)
-  -B          Check battery level
-  -g G        gatttool path (default: system available)
-  -o O        Output filename of the database (default: none)
-  -V          Verbose output
+  -m MAC      MAC address of BLE device (default: auto-discovery)
+  -b          Check battery level
+  -g PATH     gatttool path (default: system available)
+  -o FILE     Output filename of the database (default: none)
+  -v          Verbose output
 ```
 
 
