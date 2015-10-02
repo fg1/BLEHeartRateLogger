@@ -309,8 +309,10 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False):
         pass
 
 
-
-if __name__ == "__main__":
+def cli():
+    """
+    Entry point for the command line interface
+    """
     args = parse_args()
 
     if args.g != "gatttool" and not os.path.exists(args.g):
@@ -325,4 +327,7 @@ if __name__ == "__main__":
 
     main(args.m, args.o, args.g, args.b)
 
+
+if __name__ == "__main__":
+    cli()
 
