@@ -14,7 +14,7 @@ setup(
     version = '0.1.0',
     description = 'A tool to log your heart rate using a Bluetooth low-energy (BLE) heart rate monitor (HRM).',
     long_description = long_description,
-    url = 'https://github.com.com/fg1/BLEHeartRateLogger',
+    url = 'https://github.com/fg1/BLEHeartRateLogger',
     author = 'fg1',
     license = 'BSD',
 
