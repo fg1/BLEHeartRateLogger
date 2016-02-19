@@ -205,10 +205,12 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False):
             gt.sendline("connect")
 
             try:
-                gt.expect("Connection successful.", timeout=30)
-                gt.expect(r"\[LE\]>", timeout=30)
+                i = gt.expect(["Connection successful.", r"\[CON\]"], timeout=30)
+                if i == 0:
+                    gt.expect(r"\[LE\]>", timeout=30)
 
             except pexpect.TIMEOUT:
+                log.info("Connection timeout. Retrying.")
                 continue
 
             except KeyboardInterrupt:
