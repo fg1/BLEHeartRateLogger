@@ -40,6 +40,7 @@ def parse_args():
     parser.add_argument("-g", metavar='PATH', type=str, help="gatttool path (default: system available)", default="gatttool")
     parser.add_argument("-o", metavar='FILE', type=str, help="Output filename of the database (default: none)")
     parser.add_argument("-v", action='store_true', help="Verbose output")
+    parser.add_argument("-d", action='store_true', help="Enable debug of gatttool")
 
     confpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "BLEHeartRateLogger.conf")
     if os.path.exists(confpath):
@@ -176,7 +177,7 @@ def get_ble_hr_mac():
 
 
 
-def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False):
+def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, debug_gatttool=False):
     """
     main routine to which orchestrates everything
     """
@@ -201,6 +202,9 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False):
         while 1:
             log.info("Establishing connection to " + addr)
             gt = pexpect.spawn(gatttool + " -b " + addr + " --interactive")
+            if debug_gatttool:
+                gt.logfile = sys.stdout
+
             gt.expect(r"\[LE\]>")
             gt.sendline("connect")
 
@@ -237,24 +241,35 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False):
         # We determine which handle we should read for getting the heart rate
         # measurement characteristic.
         gt.sendline("char-desc")
-        try:
-            gt.expect("handle: ([x0-9]+), uuid: 00002902")
-        except pexpect.TIMEOUT:
+
+        hr_handle = None
+        while 1:
+            try:
+                gt.expect(r"handle: ([x0-9]+), uuid: ([0-9a-f]{8})", timeout=5)
+            except pexpect.TIMEOUT:
+                break
+            handle = gt.match.group(1)
+            uuid = gt.match.group(2)
+
+            if uuid == "00002902":
+                # We send the request to get HRM notifications
+                gt.sendline("char-write-req " + handle + " 0100")
+
+            elif uuid == "00002a37":
+                hr_handle = handle
+
+        if hr_handle == None:
             log.error("Couldn't find the heart rate measurement handle?!")
             return
-
-        hr_handle = gt.match.group(1)
 
         # Time period between two measures. This will be updated automatically.
         period = 1.
         last_measure = time.time() - period
+        hr_expect = "Notification handle = " + hr_handle + " value: ([0-9a-f ]+)"
 
-        # We send the request to get HRM notifications
-        gt.sendline("char-write-req " + hr_handle + " 0100")
         while 1:
             try:
-                gt.expect("Notification handle = [x0-9]+ value: ([0-9a-f ]+)",
-                          timeout=10)
+                gt.expect(hr_expect, timeout=10)
 
             except pexpect.TIMEOUT:
                 # If the timer expires, it means that we have lost the
@@ -327,7 +342,7 @@ def cli():
     else:
         log.setLevel(logging.INFO)
 
-    main(args.m, args.o, args.g, args.b)
+    main(args.m, args.o, args.g, args.b, args.d)
 
 
 if __name__ == "__main__":
