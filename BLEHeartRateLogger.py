@@ -15,8 +15,7 @@
     :license: BSD, see LICENSE for more details
 """
 
-__version__ = "0.1.0"
-
+__version__ = "0.1.1"
 
 import os
 import sys
@@ -29,6 +28,7 @@ import ConfigParser
 
 logging.basicConfig(format="%(asctime)-15s  %(message)s")
 log = logging.getLogger("BLEHeartRateLogger")
+
 
 def parse_args():
     """
@@ -92,21 +92,20 @@ def interpret(data):
         i = 3
 
     if res["ee_status"]:
-        res["ee"] = (data[i+1] << 8) | data[i]
+        res["ee"] = (data[i + 1] << 8) | data[i]
         i += 2
 
     if res["rr_interval"]:
         res["rr"] = []
         while i < len(data):
             # Note: Need to divide the value by 1024 to get in seconds
-            res["rr"].append((data[i+1] << 8) | data[i])
+            res["rr"].append((data[i + 1] << 8) | data[i])
             i += 2
 
     return res
 
 
-
-def insert_db(sq, res, period, min_ce=2, max_ce=60*2, grace_commit=2/3.):
+def insert_db(sq, res, period, min_ce=2, max_ce=60 * 2, grace_commit=2 / 3.):
     """
     Inserts data into the database
     """
@@ -119,11 +118,9 @@ def insert_db(sq, res, period, min_ce=2, max_ce=60*2, grace_commit=2/3.):
     tstamp = int(time.time())
     if res.has_key("rr"):
         for rr in res["rr"]:
-            sq.execute("INSERT INTO hrm VALUES (?, ?, ?)",
-                       (tstamp, res["hr"], rr))
+            sq.execute("INSERT INTO hrm VALUES (?, ?, ?)", (tstamp, res["hr"], rr))
     else:
-        sq.execute("INSERT INTO hrm VALUES (?, ?, ?)",
-                   (tstamp, res["hr"], -1))
+        sq.execute("INSERT INTO hrm VALUES (?, ?, ?)", (tstamp, res["hr"], -1))
 
     # Instead of pushing the data to the disk each time, we commit only every
     # 'commit_every'.
@@ -134,8 +131,7 @@ def insert_db(sq, res, period, min_ce=2, max_ce=60*2, grace_commit=2/3.):
         sq.commit()
         delta_t = time.time() - t
         log.debug("sqlite commit time: " + str(delta_t))
-        sq.execute("INSERT INTO sql VALUES (?, ?, ?)",
-                   (int(t), delta_t, insert_db.commit_every))
+        sq.execute("INSERT INTO sql VALUES (?, ?, ?)", (int(t), delta_t, insert_db.commit_every))
 
         # Because the time for commiting to the disk is not known in advance,
         # we measure it and automatically adjust automatically 'commit_every'
@@ -146,7 +142,6 @@ def insert_db(sq, res, period, min_ce=2, max_ce=60*2, grace_commit=2/3.):
             insert_db.commit_every = max(insert_db.commit_every / 2, min_ce)
 
         insert_db.i = 0
-
 
 
 def get_ble_hr_mac():
@@ -175,7 +170,6 @@ def get_ble_hr_mac():
     # We wait for the 'hcitool lescan' to finish
     time.sleep(1)
     return addr
-
 
 
 def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_handle=None, debug_gatttool=False):
@@ -276,7 +270,8 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
                 # If the timer expires, it means that we have lost the
                 # connection with the HR monitor
                 log.warn("Connection lost with " + addr + ". Reconnecting.")
-                sq.commit()
+                if sqlfile is not None:
+                    sq.commit()
                 gt.sendline("quit")
                 try:
                     gt.wait()
@@ -302,7 +297,6 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
             data = map(lambda x: int(x, 16), datahex.split(' '))
             res = interpret(data)
 
-
             if sqlfile is None:
                 log.info("Heart rate: " + str(res["hr"]))
                 continue
@@ -311,8 +305,6 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
 
             # Push the data to the database
             insert_db(sq, res, period)
-
-
 
     if sqlfile is not None:
         # We close the database properly
@@ -348,4 +340,3 @@ def cli():
 
 if __name__ == "__main__":
     cli()
-
