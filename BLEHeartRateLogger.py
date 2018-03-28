@@ -297,11 +297,11 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
             data = map(lambda x: int(x, 16), datahex.split(' '))
             res = interpret(data)
 
+            log.debug(res)
+
             if sqlfile is None:
                 log.info("Heart rate: " + str(res["hr"]))
                 continue
-
-            log.debug(res)
 
             # Push the data to the database
             insert_db(sq, res, period)
