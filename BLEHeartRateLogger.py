@@ -226,7 +226,7 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
         if check_battery:
             gt.sendline("char-read-uuid 00002a19-0000-1000-8000-00805f9b34fb")
             try:
-                gt.expect("value: ([0-9]+)")
+                gt.expect("value: ([0-9a-f]+)")
                 battery_level = gt.match.group(1)
                 log.info("Battery level: " + str(int(battery_level, 16)))
 
