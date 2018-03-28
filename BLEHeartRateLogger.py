@@ -236,7 +236,7 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
         if hr_handle == None:
             # We determine which handle we should read for getting the heart rate
             # measurement characteristic.
-            gt.sendline("characteristics")
+            gt.sendline("char-desc")
 
             while 1:
                 try:
