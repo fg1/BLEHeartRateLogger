@@ -240,7 +240,7 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
 
             while 1:
                 try:
-                    gt.expect(r"handle: ([x0-9]+), uuid: ([0-9a-f]{8})", timeout=10)
+                    gt.expect(r"handle: (0x[0-9a-f]+), uuid: ([0-9a-f]{8})", timeout=10)
                 except pexpect.TIMEOUT:
                     break
                 handle = gt.match.group(1)
