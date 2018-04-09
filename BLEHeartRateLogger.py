@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # -*- encoding: utf-8 -*-
 """
     BLEHeartRateLogger
@@ -196,7 +196,7 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
 
         while 1:
             log.info("Establishing connection to " + addr)
-            gt = pexpect.spawn(gatttool + " -b " + addr + " --interactive")
+            gt = pexpect.spawn(gatttool + " -b " + addr + " -t random --interactive")
             if debug_gatttool:
                 gt.logfile = sys.stdout
 
@@ -226,7 +226,7 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
         if check_battery:
             gt.sendline("char-read-uuid 00002a19-0000-1000-8000-00805f9b34fb")
             try:
-                gt.expect("value: ([0-9]+)")
+                gt.expect("value: ([0-9a-f]+)")
                 battery_level = gt.match.group(1)
                 log.info("Battery level: " + str(int(battery_level, 16)))
 
@@ -236,11 +236,11 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
         if hr_handle == None:
             # We determine which handle we should read for getting the heart rate
             # measurement characteristic.
-            gt.sendline("characteristics")
+            gt.sendline("char-desc")
 
             while 1:
                 try:
-                    gt.expect(r"handle: ([x0-9]+), uuid: ([0-9a-f]{8})", timeout=10)
+                    gt.expect(r"handle: (0x[0-9a-f]+), uuid: ([0-9a-f]{8})", timeout=10)
                 except pexpect.TIMEOUT:
                     break
                 handle = gt.match.group(1)
@@ -297,11 +297,11 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
             data = map(lambda x: int(x, 16), datahex.split(' '))
             res = interpret(data)
 
+            log.debug(res)
+
             if sqlfile is None:
                 log.info("Heart rate: " + str(res["hr"]))
                 continue
-
-            log.debug(res)
 
             # Push the data to the database
             insert_db(sq, res, period)
