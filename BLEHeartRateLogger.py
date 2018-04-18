@@ -191,6 +191,7 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
             sq.close()
             return
 
+    hr_ctl_handle = None
     retry = True
     while retry:
 
@@ -246,9 +247,9 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
                 handle = gt.match.group(1)
                 uuid = gt.match.group(2)
 
-                if uuid == "00002902":
-                    # We send the request to get HRM notifications
-                    gt.sendline("char-write-req " + handle + " 0100")
+                if uuid == "00002902" and hr_handle:
+                    hr_ctl_handle = handle
+                    break
 
                 elif uuid == "00002a37":
                     hr_handle = handle
@@ -256,6 +257,10 @@ def main(addr=None, sqlfile=None, gatttool="gatttool", check_battery=False, hr_h
             if hr_handle == None:
                 log.error("Couldn't find the heart rate measurement handle?!")
                 return
+
+        if hr_ctl_handle:
+            # We send the request to get HRM notifications
+            gt.sendline("char-write-req " + hr_ctl_handle + " 0100")
 
         # Time period between two measures. This will be updated automatically.
         period = 1.
