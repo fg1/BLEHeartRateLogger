@@ -15,7 +15,7 @@ $ apt-get install bluetooth python-pexpect
 $ git clone https://github.com/fg1/BLEHeartRateLogger.git
 ```
 
-Run the script as root or correctly specify the rights on `hcitool` and `gatttool`.
+Run the script as root user or correctly specify the rights on `hcitool` and `gatttool`.
 
 
 
