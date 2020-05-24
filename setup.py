@@ -32,7 +32,7 @@ setup(
 
     keywords = 'bluetooth heart-rate logging',
     packages = find_packages(),
-    install_requires = ['pexpect'],
+    install_requires = ['pexpect', 'configparser'],
 
     entry_points = {
         'console_scripts': [
