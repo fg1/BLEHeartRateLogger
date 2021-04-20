@@ -49,9 +49,15 @@ optional arguments:
   -v          Verbose output
 ```
 
+## Using the tool as non-root user
 
+The `setcap` command can be used to give `hcitool` permission to be used by users other than root:
+```
+sudo setcap cap_net_raw+eip $(eval readlink -f `which hcitool`)
+sudo setcap cap_net_admin+eip $(eval readlink -f `which hciconfig`)
+```
 
-## Troubleshooting
+## Troubleshooting
 
 In case the tool is not able to connect to your BLE HRM, first check manually that your computer and BLE HRM device are able to talk to eachother using the following steps (as root).
 ```
