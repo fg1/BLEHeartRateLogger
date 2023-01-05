@@ -8,6 +8,7 @@ Communication with the BLE HRM is established using `hcitool` and `gatttool`. Th
 The code was used successfully with the following devices:
 - Polar H7
 - Zephyr HxM
+- Wahoo TICKR
 
 
 ## Installation
