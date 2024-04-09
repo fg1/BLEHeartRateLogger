@@ -54,7 +54,7 @@ def parse_args():
         # configuration of the parser.
         args = vars(parser.parse_args([]))
         err = False
-        for key in config.iterkeys():
+        for key in config.keys():
             if key not in args:
                 log.error("Configuration file error: invalid key '" + key + "'.")
                 err = True
